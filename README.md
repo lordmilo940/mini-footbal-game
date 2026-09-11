@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mini Football Game - Stadium Edition</title>
+    <title>Mini Football Game - Stable Edition</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -18,10 +18,9 @@
 
     <div class="controls-hint">
         Use <b>W, A, S, D</b> or <b>Arrow Keys</b> to move.<br>
-        <i>The code is now organized into HTML, CSS, and JS files!</i>
+        <i>The code is 100% stable now across all browsers!</i>
     </div>
 
-    <!-- Vinculación del archivo de lógica -->
     <script src="script.js"></script>
 </body>
 </html>body {
@@ -53,7 +52,7 @@
 
 canvas {
     border: 4px solid #fff;
-    border-radius: 40px; /* Bordes exteriores redondeados coincidentes */
+    border-radius: 40px;
     box-shadow: 0px 15px 35px rgba(0,0,0,0.7);
     background-color: #2e7d32;
 }
@@ -76,7 +75,7 @@ let aiScore = 0;
 let timeLeft = 60;
 let gameActive = true;
 
-const fieldRadius = 40; // Radio de curvatura de las esquinas
+const fieldRadius = 40; 
 
 const ball = { x: 400, y: 250, vx: 0, vy: 0, radius: 12, friction: 0.98 };
 const player = { x: 200, y: 250, radius: 22, speed: 4.5, color: "#3498db", angle: 0 };
@@ -101,7 +100,6 @@ const keys = {};
 window.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
 window.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
 
-// Cronómetro del partido
 const countdown = setInterval(() => {
     if (timeLeft > 0 && gameActive) {
         timeLeft--;
@@ -124,7 +122,6 @@ function resetPositions() {
     ai.y = canvas.height / 2;
 }
 
-// Colisión circular clásica (Jugador <-> Pelota)
 function handleCollision(entity) {
     let dx = ball.x - entity.x;
     let dy = ball.y - entity.y;
@@ -147,7 +144,6 @@ function handleCollision(entity) {
 function update() {
     if (!gameActive) return;
 
-    // Movimiento Jugador
     let moveX = 0;
     let moveY = 0;
     if (keys["w"] || keys["arrowup"]) moveY -= 1;
@@ -161,7 +157,6 @@ function update() {
         player.angle = Math.atan2(moveY, moveX);
     }
 
-    // Inteligencia Artificial asistida con retraso humano
     ai.reactionDelay--;
     if (ai.reactionDelay <= 0) {
         let errorFactor = (Math.random() - 0.5) * 60;
@@ -187,13 +182,11 @@ function update() {
     ai.y += aiMoveY * ai.speed;
     ai.angle = Math.atan2(aiMoveY, aiMoveX);
 
-    // Contención general de mapa
     [player, ai, ball].forEach(e => {
         e.x = Math.max(e.radius, Math.min(canvas.width - e.radius, e.x));
         e.y = Math.max(e.radius, Math.min(canvas.height - e.radius, e.y));
     });
 
-    // Desplazamiento y fricción de la pelota
     ball.x += ball.vx;
     ball.y += ball.vy;
     ball.vx *= ball.friction;
@@ -202,7 +195,6 @@ function update() {
     if (Math.abs(ball.vx) < 0.1) ball.vx = 0;
     if (Math.abs(ball.vy) < 0.1) ball.vy = 0;
 
-    // Procesar las 4 esquinas redondeadas
     if (ball.x < fieldRadius && ball.y < fieldRadius) handleCornerCollision(ball, fieldRadius, fieldRadius);
     if (ball.x > canvas.width - fieldRadius && ball.y < fieldRadius) handleCornerCollision(ball, canvas.width - fieldRadius, fieldRadius);
     if (ball.x < fieldRadius && ball.y > canvas.height - fieldRadius) handleCornerCollision(ball, fieldRadius, canvas.height - fieldRadius);
@@ -215,11 +207,9 @@ function update() {
         if (p.x > canvas.width - fieldRadius && p.y > canvas.height - fieldRadius) handleCornerCollision(p, canvas.width - fieldRadius, canvas.height - fieldRadius);
     });
 
-    // Rebotes lineales superiores/inferiores
     if (ball.y - ball.radius <= 0) { ball.y = ball.radius; ball.vy = -ball.vy * 0.8; }
     if (ball.y + ball.radius >= canvas.height) { ball.y = canvas.height - ball.radius; ball.vy = -ball.vy * 0.8; }
 
-    // Colisiones con Arcos y líneas finales
     if (ball.x - ball.radius <= 0) {
         if (ball.y > goals.left.y && ball.y < goals.left.y + goals.left.height) {
             if (ball.x + ball.radius < 0) { aiScore++; aiScoreEl.innerText = aiScore; resetPositions(); }
@@ -240,11 +230,24 @@ function update() {
     handleCollision(ai);
 }
 
-function draw() {
-    // Recorte circular del césped
-    ctx.save();
+// Genera un trazado manual compatible para recortar las esquinas de la cancha
+function createCustomFieldPath(w, h, r) {
     ctx.beginPath();
-    ctx.roundRect(0, 0, canvas.width, canvas.height, fieldRadius);
+    ctx.moveTo(r, 0);
+    ctx.lineTo(w - r, 0);
+    ctx.arcTo(w, 0, w, r, r);
+    ctx.lineTo(w, h - r);
+    ctx.arcTo(w, h, w - r, h, r);
+    ctx.lineTo(r, h);
+    ctx.arcTo(0, h, 0, h - r, r);
+    ctx.lineTo(0, r);
+    ctx.arcTo(0, 0, r, 0, r);
+    ctx.closePath();
+}
+
+function draw() {
+    ctx.save();
+    createCustomFieldPath(canvas.width, canvas.height, fieldRadius);
     ctx.clip();
 
     ctx.fillStyle = "#2e7d32";
@@ -271,12 +274,10 @@ function draw() {
     ctx.strokeRect(canvas.width - 60, goals.right.y - 30, 60, goals.right.height + 60);
     ctx.restore();
 
-    // Redes de portería
     ctx.fillStyle = "rgba(255,255,255,0.9)";
     ctx.fillRect(0, goals.left.y, goals.left.width, goals.left.height);
     ctx.fillRect(goals.right.x, goals.right.y, goals.right.width, goals.right.height);
 
-    // Personajes y pelota
     drawCharacter(player.x, player.y, player.radius, player.color, player.angle, "10");
     drawCharacter(ai.x, ai.y, ai.radius, ai.color, ai.angle, "9");
 
@@ -303,5 +304,4 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
-// Inicializar motor de juego
 gameLoop();
